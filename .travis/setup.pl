@@ -25,7 +25,12 @@ system "rm -Rf $workdir";
 mkdir $workdir or die $!;
 chdir $workdir or die $!;
 
-HTTP::Tiny->new->mirror($tgz_url, $tgz_name);
+if ($^V >= 5.016) {
+    HTTP::Tiny->new->mirror($tgz_url, $tgz_name);
+}
+else {
+    system "curl -o $tgz_name $tgz_url" and die "curl failed: $?";
+}
 system "tar xf $tgz_name" and die;
 chdir $tgz_dir or die $!;
 system "CFLAGS='$cflags' ./configure --prefix=$prefix && make && make install" and die $?;
