@@ -29,4 +29,3 @@ HTTP::Tiny->new->mirror($tgz_url, $tgz_name);
 system "tar xf $tgz_name" and die;
 chdir $tgz_dir or die $!;
 system "CFLAGS='$cflags' ./configure --prefix=$prefix && make && make install" and die $?;
-

@@ -8,11 +8,9 @@ perl:
   - "5.10"
   - "5.8"
 
-before_install:
-  - perl .travis/setup.pl
-
 install:
-  - perl -e1
+  - perl .travis/setup.pl
+  - cpanm Module::Install::CheckLib
 
 script:
   - perl Makefile.PL lib=libssh2/lib inc=libss2/include && make test
