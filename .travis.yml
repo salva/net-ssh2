@@ -9,7 +9,7 @@ perl:
   - "5.8"
 
 install:
-  - perl .travis/setup.pl
+  - perl .travis/install-libssh2.pl
   - cpanm Module::Install::CheckLib
 
 script:
