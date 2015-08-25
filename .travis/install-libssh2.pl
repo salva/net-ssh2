@@ -19,18 +19,11 @@ my $prefix = "libssh2";
 $prefix = File::Spec->rel2abs($prefix);
 
 system "rm -Rf $prefix" and die "execution of 'rm -Rf $prefix' failed, RC: $?";
-system "rm -Rf $workdir/$tgz_dir";
+system "rm -Rf $workdir";
 mkdir $workdir or die $!;
 chdir $workdir or die $!;
 
-if ($^V >= 5.016) {
-    require HTTP::Tiny;
-    HTTP::Tiny->new->mirror($tgz_url, $tgz_name);
-}
-else {
-    # system "curl -o $tgz_name $tgz_url" and die "curl failed: $?";
-    system "wget $tgz_url" and die "wget failed: $?";
-}
+system "wget $tgz_url" and die "wget failed: $?";
 system "tar xf $tgz_name" and die;
 chdir $tgz_dir or die $!;
 system "CFLAGS='$cflags' ./configure --prefix=$prefix && make && make install" and die $?;
