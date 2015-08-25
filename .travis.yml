@@ -7,5 +7,6 @@ perl:
   - "5.12"
   - "5.10"
   - "5.8"
+install:
 before_script: .travis/setup.pl
 script: bundle exec perl Makefile.PL lib=libssh2/lib inc=libss2/include && make test
