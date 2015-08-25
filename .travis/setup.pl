@@ -21,7 +21,7 @@ my $prefix = "libssh2";
 $prefix = File::Spec->rel2abs($prefix);
 
 system "rm -Rf $prefix" and die "execution of 'rm -Rf $prefix' failed, RC: $?";
-system "rm -Rf $workdir";
+system "rm -Rf $workdir/$tgz_dir";
 mkdir $workdir or die $!;
 chdir $workdir or die $!;
 
@@ -29,7 +29,8 @@ if ($^V >= 5.016) {
     HTTP::Tiny->new->mirror($tgz_url, $tgz_name);
 }
 else {
-    system "curl -o $tgz_name $tgz_url" and die "curl failed: $?";
+    # system "curl -o $tgz_name $tgz_url" and die "curl failed: $?";
+    system "wget $tgz_url" and die "wget failed: $?";
 }
 system "tar xf $tgz_name" and die;
 chdir $tgz_dir or die $!;
