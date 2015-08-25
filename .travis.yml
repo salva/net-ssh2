@@ -11,5 +11,8 @@ perl:
 before_install:
   - perl .travis/setup.pl
 
+install:
+  - perl -e1
+
 script:
   - perl Makefile.PL lib=libssh2/lib inc=libss2/include && make test
