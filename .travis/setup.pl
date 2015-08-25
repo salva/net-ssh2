@@ -25,7 +25,7 @@ system "rm -Rf $workdir";
 mkdir $workdir or die $!;
 chdir $workdir or die $!;
 
-if ($^V >= 5.0160) {
+if ($^V >= 5.016) {
     HTTP::Tiny->new->mirror($tgz_url, $tgz_name);
 }
 else {
