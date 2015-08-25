@@ -2,9 +2,7 @@
 
 use strict;
 use warnings;
-use HTTP::Tiny;
 use File::Spec;
-
 
 unless ($ENV{TRAVIS}) {
     die "This script is only intended to be run from Travis CI platform\n";
@@ -26,6 +24,7 @@ mkdir $workdir or die $!;
 chdir $workdir or die $!;
 
 if ($^V >= 5.016) {
+    require HTTP::Tiny;
     HTTP::Tiny->new->mirror($tgz_url, $tgz_name);
 }
 else {
