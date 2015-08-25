@@ -23,7 +23,9 @@ system "rm -Rf $workdir";
 mkdir $workdir or die $!;
 chdir $workdir or die $!;
 
-system "wget --retry-connrefused $tgz_url" and die "wget failed: $?";
+for (1..5) {
+    system "wget --retry-connrefused --tries=8 $tgz_url" or last;
+}
 system "tar xf $tgz_name" and die;
 chdir $tgz_dir or die $!;
 system "CFLAGS='$cflags' ./configure --prefix=$prefix && make && make install" and die $?;
