@@ -227,13 +227,16 @@ my $socket_class = do {
 # methods
 
 sub new {
-    my $class = shift;
-    my %opts  = @_;
-
+    my ($class, %opts) = @_;
     my $self = $class->_new;
 
-    $self->trace($opts{trace}) if defined $opts{trace};
-    $self->timeout($opts{timeout}) if defined $opts{timeout};
+    for (qw(trace timeout)) {
+        $self->$_($opts{$_}) if defined $opts{$_}
+    }
+    $self->flag(COMPRESS => $opts{compress})
+        if defined $opts{compress} and (version())[1] >= 0x10500;
+    $self->flag(SIGPIPE => $opts{sigpipe})
+        if defined $opts{sigpipe};
 
     return $self;
 }
@@ -251,7 +254,7 @@ sub connect {
         $sock = shift;
         if ($sock =~ /^\d{1,10}$/) {
             $connect_fd_warned++ or
-                croak "passing a file descriptor number to connect is deprecated";
+                carp "passing a file descriptor number to connect is deprecated";
             $fd = $sock;
         } elsif(ref $sock) {
             # handled below
@@ -266,8 +269,9 @@ sub connect {
             carp "passing options to connect is deprectated";
         $self->timeout($opts{Timeout}) if $opts{Timeout};
         if ($opts{Compress} and
-            $self->version)[1] > 0x10500) {
-        $self->flag(COMPRESS => 1);
+            ($self->version)[1] >= 0x10500) {
+            $self->flag(COMPRESS => 1);
+        }
     }
 
     if (@_ == 2) {
@@ -278,7 +282,7 @@ sub connect {
                                     Blocking => $blocking,
                                     Timeout => $timeout );
         unless ($sock) {
-            $self->_set_error(LIBSSH2_ERROR_SOCKET_NONE, "Unable to connect to remote host: $!");
+            $self->_set_error(LIBSSH2_ERROR_SOCKET_NONE(), "Unable to connect to remote host: $!");
             goto error;
         }
 
@@ -289,7 +293,7 @@ sub connect {
     unless (defined $fd) {
         $fd = fileno($sock);
         unless (defined $fd) {
-            $self->_set_error(LIBSSH2_ERROR_SOCKET_NONE, "Unable to get file descriptor from socket: $!");
+            $self->_set_error(LIBSSH2_ERROR_SOCKET_NONE(), "Unable to get file descriptor from socket: $!");
             goto error;
         }
     }
