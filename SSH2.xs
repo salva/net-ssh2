@@ -910,7 +910,7 @@ net_ss_banner(SSH2* ss, SV* banner)
 PREINIT:
     SV* sv_banner;
 CODE:
-    sv_banner = sv_2mortal(newSVpvf("SSH2-2.0-%s", SvPVbyte_nolen(banner)));
+    sv_banner = sv_2mortal(newSVpvf("SSH-2.0-%s", SvPVbyte_nolen(banner)));
     RETVAL = libssh2_banner_set(ss->session, SvPVbyte_nolen(sv_banner));
 OUTPUT:
     RETVAL
@@ -958,7 +958,7 @@ CODE:
         croak("%s::method: unknown method type: %s",
               class, SvPVbyte_nolen(method_type));
     /* if there are no other parameters, return the current value */
-    if (items == 1) {
+    if (items == 2) {
         const char *method = libssh2_session_methods(ss->session, (int)type);
         if (!method)
             XSRETURN_EMPTY;

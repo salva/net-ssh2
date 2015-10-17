@@ -71,7 +71,7 @@ TEST
     print "\n";
 }
 SKIP: { # SKIP-server
-skip '- no server daemon available', 62 unless $host;
+skip '- no server daemo n available', 62 unless $host;
 ok($ssh2->connect($host), "connect to $host");
 
 isa_ok($ssh2->sock, 'IO::Socket', '->sock isa IO::Socket');
@@ -136,10 +136,10 @@ ok($chan->ext_data('normal'), 'normal extended data handling');
 ok($chan->ext_data('merge'), 'merge extended data');
 
 # (3) environment
-is($chan->setenv(), 0, 'empty setenv');
+is($chan->setenv(), 1, 'empty setenv');
 my %env = (test1 => 'A', test2 => 'something', test3 => 'E L S E');
 # most sshds disallow set, so we're happy if these don't crash
-ok($chan->setenv(%env) <= keys %env, 'set environment variables');  
+is($chan->setenv(%env), 1, 'set environment variables');
 is($chan->session, $ssh2, 'verify session');
 
 # (1) callback
