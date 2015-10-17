@@ -112,7 +112,10 @@ method can be used to check for read/write availability and other conditions.
 
 Sets remote environment variables.  Note that most implementations do not allow
 environment variables to be freely set.  Pass in a list of keys and values
-with the values to set.  Returns the number of successful sets.
+with the values to set.
+
+It returns a true value when all the given environment variables are
+correctly set.
 
 =head2 blocking ( flag )
 
