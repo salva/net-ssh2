@@ -22,6 +22,16 @@ sub error {
     shift->session->error(@_)
 }
 
+sub setenv {
+    my ($self, %env) = @_;
+    my $rc = 1;
+    while (my ($k, $v) = each %env) {
+        $self->_setenv($k, $v)
+            or undef $rc;
+    }
+    $rc
+}
+
 
 # tie interface
 
