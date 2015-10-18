@@ -420,6 +420,13 @@ sub auth {
     return;  # failure
 }
 
+sub auth_list {
+    my ($self, $username) = @_;
+    my $auth = $self->_auth_list($username);
+    defined $auth or return;
+    wantarray ? split /,/, $auth : $auth;
+}
+
 my $term_readkey_unavailable_warned;
 my $term_readkey_loaded;
 sub _load_term_readkey {

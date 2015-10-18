@@ -221,24 +221,6 @@ LIBSSH2_FREE_FUNC(local_free) {
     Safefree(ptr);
 }
 
-/* split a string at commas and push each substring onto the perl stack */
-static int split_comma(SV** sp, const char* str) {
-    int i;
-    const char* p;
-
-    if (!str || !*str)
-        return 0;
-
-    i = 1;
-    while ((p = strchr(str, ','))) {
-        mXPUSHp(str, p - str);
-        str = p + 1;
-        ++i;
-    }
-    mXPUSHp(str, strlen(str));
-    return i;
-}
-
 /* push a hash of values onto the return stack, for '%hash = func()' */
 static int push_hv(SV** sp, HV* hv) {
     I32 keys = hv_iterinit(hv);
@@ -1082,25 +1064,21 @@ PPCODE:
     else
         XSRETURN_EMPTY;
 
-void
-net_ss_auth_list(SSH2* ss, SV* username = NULL)
+char *
+net_ss__auth_list(SSH2* ss, SV* username)
 PREINIT:
-    const char* pv_username = NULL;
-    char* auth;
-    STRLEN len_username = 0;
-    int count = 1;
-PPCODE:
-    if (username && SvPOK(username))
+    const char* pv_username;
+    STRLEN len_username;
+CODE:
+    if (SvPOK(username))
         pv_username = SvPVbyte(username, len_username);
-    auth = libssh2_userauth_list(ss->session, pv_username, len_username);
-    if (!auth)
-        XSRETURN_EMPTY;
-    if (GIMME_V == G_ARRAY)
-        count = split_comma(sp, auth);
-    else
-        PUSHs(sv_2mortal(newSVpv(auth, 0)));
-    /* Safefree(auth); this causes a double-free segfault */
-    XSRETURN(count);
+    else {
+        pv_username = NULL;
+        len_username = 0;
+    }
+    RETVAL = libssh2_userauth_list(ss->session, pv_username, len_username);
+OUTPUT:
+    RETVAL
 
 SSH2_RC
 net_ss_auth_ok(SSH2* ss)
