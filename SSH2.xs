@@ -196,8 +196,7 @@ typedef struct SSH2_KNOWNHOSTS {
 #endif
 
 static int net_ss_debug_out = 0;
-static unsigned long net_ch_gensym = 0;
-static unsigned long net_fi_gensym = 0;
+static unsigned long gensym_count = 0;
 
 /* debug output */
 static void debug(const char* format, ...) {
@@ -220,6 +219,27 @@ LIBSSH2_REALLOC_FUNC(local_realloc) {
 }
 LIBSSH2_FREE_FUNC(local_free) {
     Safefree(ptr);
+}
+
+static void
+wrap_into(SV *to, const char *pkg, void *object) {
+    GV* gv = (GV*)newSVrv(to, pkg);
+    IO* io = (IO*)newSV(0);
+    SV* name_sv = sv_2mortal(newSVpvf("_GEN_%ld", (long)gensym_count++));
+    STRLEN name_len;
+    const char *name = SvPVbyte(name_sv, name_len);
+        
+    SvUPGRADE((SV*)gv, SVt_PVGV);
+    gv_init(gv, gv_stashpv(pkg, GV_ADD), name, name_len, 0);
+    SvUPGRADE((SV*)io, SVt_PVIO);
+
+    GvSV(gv) = newSViv(PTR2IV(object));
+    GvIOp(gv) = io;
+#if PERL_VERSION > 6
+    sv_magic((SV*)io, newRV((SV*)gv), PERL_MAGIC_tiedscalar, Nullch, 0);
+#else
+    sv_magic((SV*)gv, newRV((SV*)gv), PERL_MAGIC_tiedscalar, Nullch, 0);
+#endif
 }
 
 static IV
