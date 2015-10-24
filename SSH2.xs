@@ -222,6 +222,29 @@ LIBSSH2_FREE_FUNC(local_free) {
     Safefree(ptr);
 }
 
+static IV
+unwrap(SV *sv, const char *pkg, const char *method) {
+    if (SvROK(sv) && sv_isa(sv, pkg)) {
+        SV *inner = SvRV(sv);
+        if (SvIOK(inner))
+            return SvIVX(inner);
+    }
+    croak("%s::%s: invalid object %s", pkg, method, SvPV_nolen(sv));
+}
+
+static IV
+unwrap_tied(SV *sv, const char *pkg, const char *method) {
+    if (SvROK(sv) && sv_isa(sv, pkg)) {
+        SV *gv = SvRV(sv);
+        if (SvTYPE(gv) == SVt_PVGV) {
+            SV *inner = GvSV((GV*)gv);
+            if (inner && SvIOK(inner))
+                return SvIVX(inner);
+        }
+    }
+    croak("%s::%s: invalid object %s", pkg, method, SvPV_nolen(sv));
+}
+
 /* push a hash of values onto the return stack, for '%hash = func()' */
 static int push_hv(SV** sp, HV* hv) {
     I32 keys = hv_iterinit(hv);
@@ -935,7 +958,7 @@ CODE:
         croak("%s::method: unknown method type: %s",
               class, SvPVbyte_nolen(method_type));
     /* if there are no other parameters, return the current value */
-    if (items == 2) {
+    if (items > 1) {
         const char *method = libssh2_session_methods(ss->session, (int)type);
         if (!method)
             XSRETURN_EMPTY;
