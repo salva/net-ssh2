@@ -222,7 +222,7 @@ LIBSSH2_FREE_FUNC(local_free) {
 }
 
 static void
-wrap_into(SV *to, const char *pkg, void *object) {
+wrap_tied_into(SV *to, const char *pkg, void *object) {
     GV* gv = (GV*)newSVrv(to, pkg);
     IO* io = (IO*)newSV(0);
     SV* name_sv = sv_2mortal(newSVpvf("_GEN_%ld", (long)gensym_count++));
@@ -312,7 +312,8 @@ static int iv_constant_sv(const char *prefix, SV* c_sv, IV* piv) {
 }
 
 /* create a hash from an SFTP attributes structure */
-static HV* hv_from_attrs(LIBSSH2_SFTP_ATTRIBUTES* attrs) {
+static HV*
+hv_from_attrs(LIBSSH2_SFTP_ATTRIBUTES* attrs) {
     HV* hv = newHV();
     debug("hv_from_attrs: attrs->flags = %d\n", attrs->flags);
     if (attrs->flags & LIBSSH2_SFTP_ATTR_SIZE)
