@@ -132,6 +132,7 @@ typedef int SSH2_BYTES; /* for functions returning a byte count or a negative nu
 typedef libssh2_uint64_t SSH2_BYTES64; /* the same for 64bit numbers */
 typedef int SSH2_ERROR; /* for returning SSH2 error numbers */
 typedef int SSH2_NERROR; /* for converting SSH2 error code to boolean just indicating success or failure */
+typedef int SSH2_BOOL; /* for yes/no responses */
 
 typedef IV SSH2_METHOD;       /* LIBSSH2_METHOD_ constants */
 typedef IV SSH2_FLAG;         /* LIBSSH2_FLAG_ constants */
@@ -878,16 +879,16 @@ OUTPUT:
     RETVAL
 
 void
-net_ss_trace(SSH2* ss, SV* bitmask)
+net_ss_trace(SSH2* ss, IV bitmask)
 CODE:
-    libssh2_trace(ss->session, SvIV(bitmask));
+    libssh2_trace(ss->session, bitmask);
 
 #if LIBSSH2_VERSION_MAJOR >= 1
 
-SV*
+IV
 net_ss_block_directions(SSH2* ss)
 CODE:
-    RETVAL = newSViv((IV)libssh2_session_block_directions(ss->session));
+    RETVAL = libssh2_session_block_directions(ss->session);
 OUTPUT:
     RETVAL
 
@@ -921,12 +922,12 @@ CODE:
 
 #endif
 
-SV*
-net_ss_blocking(SSH2* ss, SV* blocking = &PL_sv_undef)
+SSH2_BOOL
+net_ss_blocking(SSH2* ss, SSH2_BOOL blocking = 0)
 CODE:
     if (items > 1)
-        libssh2_session_set_blocking(ss->session, SvTRUE(blocking));
-    RETVAL = (libssh2_session_get_blocking(ss->session) ? &PL_sv_yes : &PL_sv_no);
+        libssh2_session_set_blocking(ss->session, blocking);
+    RETVAL = libssh2_session_get_blocking(ss->session);
 OUTPUT:
     RETVAL
 
@@ -939,9 +940,9 @@ CODE:
     Safefree(ss);
 
 void
-net_ss_debug(SV*, SV* debug)
+net_ss_debug(SV*, IV debug)
 CODE:
-    net_ss_debug_out = SvIV(debug) & 1;  /* allow for future flags */
+    net_ss_debug_out = (debug & 1);  /* allow for future flags */
 
 void
 net_ss_version(...)
@@ -959,12 +960,12 @@ PPCODE:
     XSRETURN(3);
 
 SSH2_NERROR
-net_ss_banner(SSH2* ss, SV* banner)
+net_ss_banner(SSH2* ss, SSH2_CHARP banner)
 PREINIT:
-    SV* sv_banner;
+    SV* full_banner;
 CODE:
-    sv_banner = sv_2mortal(newSVpvf("SSH-2.0-%s", SvPVbyte_nolen(banner)));
-    RETVAL = libssh2_banner_set(ss->session, SvPVbyte_nolen(sv_banner));
+    full_banner = sv_2mortal(newSVpvf("SSH-2.0-%s", banner));
+    RETVAL = libssh2_banner_set(ss->session, SvPVbyte_nolen(full_banner));
 OUTPUT:
     RETVAL
 
@@ -1114,14 +1115,14 @@ PPCODE:
         XSRETURN_EMPTY;
 
 void
-net_ss_auth_list(SSH2* ss, SV* username = NULL)
+net_ss_auth_list(SSH2* ss, SV* username = &PL_sv_undef)
 PREINIT:
     const char* pv_username = NULL;
     char* auth;
     STRLEN len_username = 0;
     int count = 1;
 PPCODE:
-    if (username && SvPOK(username))
+    if (SvPOK(username))
         pv_username = SvPVbyte(username, len_username);
     auth = libssh2_userauth_list(ss->session, pv_username, len_username);
     if (!auth)
@@ -1182,7 +1183,7 @@ OUTPUT:
 #if LIBSSH2_VERSION_NUM >= 0x010203
 
 SV *
-net_ss_auth_agent(SSH2* ss, const char* username)
+net_ss_auth_agent(SSH2* ss, SSH2_CHARP username)
 PREINIT:
     LIBSSH2_AGENT *agent;
     int old_blocking;
@@ -1372,7 +1373,7 @@ OUTPUT:
 #if LIBSSH2_VERSION_NUM >= 0x10601
 
 SSH2_CHANNEL*
-net_ss__scp_get(SSH2* ss, const char* path, HV* stat = NULL)
+net_ss__scp_get(SSH2* ss, SSH2_CHARP path, HV* stat = NULL)
 PREINIT:
     libssh2_struct_stat st;
 CODE:
@@ -1396,7 +1397,7 @@ OUTPUT:
 #else
 
 SSH2_CHANNEL*
-net_ss__scp_get(SSH2* ss, const char* path, HV* stat = NULL)
+net_ss__scp_get(SSH2* ss, SSH2_CHARP path, HV* stat = NULL)
 PREINIT:
     struct stat st;
 CODE:
@@ -1416,8 +1417,8 @@ OUTPUT:
 #endif
 
 SSH2_CHANNEL*
-net_ss__scp_put(SSH2* ss, const char* path, int mode, size_t size, \
-    long mtime = 0, long atime = 0)
+net_ss__scp_put(SSH2* ss, SSH2_CHARP path, int mode, size_t size, \
+                long mtime = 0, long atime = 0)
 CODE:
     NEW_CHANNEL(libssh2_scp_send_ex(ss->session,
      path, mode, size, mtime, atime));
@@ -1425,8 +1426,8 @@ OUTPUT:
     RETVAL
 
 SSH2_CHANNEL*
-net_ss_tcpip(SSH2* ss, const char* host, int port, \
-             const char* shost = "127.0.0.1", int sport = 22)
+net_ss_tcpip(SSH2* ss, SSH2_CHARP host, int port, \
+             SSH2_CHARP shost = "127.0.0.1", int sport = 22)
 CODE:
     NEW_CHANNEL(libssh2_channel_direct_tcpip_ex(ss->session,
                                                 (char*)host, port,
@@ -1436,11 +1437,11 @@ OUTPUT:
 
 SSH2_LISTENER*
 net_ss_listen(SSH2* ss, int port, const char* host = NULL, \
-              SV* bound_port = NULL, int queue_maxsize = 16)
+              SV* bound_port = &PL_sv_undef, int queue_maxsize = 16)
 PREINIT:
     int i_bound_port;
 CODE:
-    if (bound_port && SvOK(bound_port)) {
+    if (SvOK(bound_port)) {
         if (!SvROK(bound_port) && SvTYPE(SvRV(bound_port)) <= SVt_PVNV)
             croak("%s::listen: bound port must be scalar reference", class);
     } else
