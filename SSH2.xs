@@ -1441,14 +1441,13 @@ net_ss_listen(SSH2* ss, int port, const char* host = NULL, \
 PREINIT:
     int i_bound_port;
 CODE:
-    if (SvOK(bound_port)) {
-        if (!SvROK(bound_port) && SvTYPE(SvRV(bound_port)) <= SVt_PVNV)
-            croak("%s::listen: bound port must be scalar reference", class);
-    } else
-        bound_port = NULL;
+    if (SvOK(bound_port) &&
+        ((!SvROK(bound_port) || (SvTYPE(SvRV(bound_port)) > SVt_PVNV))))
+        croak("%s::listen: bound port must be scalar reference", class);
     NEW_LISTENER(libssh2_channel_forward_listen_ex(ss->session,
-     (char*)host, port, bound_port ? &i_bound_port : NULL, queue_maxsize));
-    if (RETVAL && bound_port)
+                                                   (char*)host, port, &i_bound_port,
+                                                   queue_maxsize));
+    if (RETVAL && SvOK(bound_port))
         sv_setiv(SvRV(bound_port), i_bound_port);
 OUTPUT:
     RETVAL
