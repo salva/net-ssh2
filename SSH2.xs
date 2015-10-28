@@ -255,7 +255,7 @@ wrap_tied_into(SV *to, const char *pkg, void *object) {
     SV* name_sv = sv_2mortal(newSVpvf("_GEN_%ld", (long)gensym_count++));
     STRLEN name_len;
     const char *name = SvPVbyte(name_sv, name_len);
-        
+
     SvUPGRADE((SV*)gv, SVt_PVGV);
     gv_init(gv, gv_stashpv(pkg, GV_ADD), name, name_len, 0);
     SvUPGRADE((SV*)io, SVt_PVIO);
@@ -361,9 +361,10 @@ hv_from_attrs(LIBSSH2_SFTP_ATTRIBUTES* attrs) {
 
 /* return attributes from function, as flat hash or hashref */
 #define XSRETURN_STAT_ATTRS(name) XSRETURN(return_stat_attrs(sp, &attrs, name))
-    
-static int return_stat_attrs(SV** sp, LIBSSH2_SFTP_ATTRIBUTES* attrs,
- SV* name) {
+
+static int return_stat_attrs(SV** sp,
+                             LIBSSH2_SFTP_ATTRIBUTES* attrs,
+                             SV* name) {
     HV* hv_attrs = hv_from_attrs(attrs);
     if (name)
         hv_store(hv_attrs, "name", 4, name, 0/*hash*/);
