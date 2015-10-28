@@ -1529,7 +1529,7 @@ CODE:
         pollfd[i].revents = 0;
         debug("- [%d] events %d\n", i, pollfd[i].events);
     }
-        
+
     changed = libssh2_poll(pollfd, count, timeout);
     debug("- libssh2_poll returned %d\n", changed);
 
@@ -1587,14 +1587,14 @@ SSH2_NERROR
 net_ch__setenv(SSH2_CHANNEL* ch, SV *key, SV *value)
 PREINIT:
     int i, success = 0;
-    const char* pv_key, * pv_value;
+    char* pv_key, * pv_value;
     STRLEN len_key, len_value;
 CODE:
     pv_key = SvPVbyte(key, len_key);
     pv_value = SvPVbyte(value, len_value);
     RETVAL = libssh2_channel_setenv_ex(ch->channel,
-                                       (char*)pv_key, len_key,
-                                       (char*)pv_value, len_value);
+                                       pv_key, len_key,
+                                       pv_value, len_value);
 OUTPUT:
     RETVAL
 
