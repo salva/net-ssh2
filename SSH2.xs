@@ -40,6 +40,16 @@
 #define LIBSSH2_EXTENDED_DATA_STDERR    SSH_EXTENDED_DATA_STDERR
 #define LIBSSH2_CHANNEL_FLUSH_STDERR    SSH_EXTENDED_DATA_STDERR
 
+#define LIBSSH2_FXFO_RDWR    O_RDWR
+#define LIBSSH2_FXFO_RDONLY  O_RDONLY
+#define LIBSSH2_FXFO_READ    O_RDONLY
+#define LIBSSH2_FXFO_WRONLY  O_WRONLY
+#define LIBSSH2_FXFO_WRITE   O_WRONLY
+#define LIBSSH2_FXFO_APPEND  O_APPEND
+#define LIBSSH2_FXFO_CREAT   O_CREAT
+#define LIBSSH2_FXFO_TRUNC   O_TRUNC
+#define LIBSSH2_FXFO_EXCL    O_EXCL
+
 #include "const-c.inc"
 
 #if defined(USE_ITHREADS) && (defined(I_PTHREAD) || defined(WIN32))
@@ -170,6 +180,7 @@ typedef IV SSH2_CALLBACK;     /* LIBSSH2_CALLBACK_ constants */
 typedef IV SSH2_HOSTKEY_HASH; /* LIBSSH2_HOSTKEY_HASH_ constants */
 typedef IV SSH2_CHANNEL_EXTENDED_DATA; /* SSH2_CHANNEL_EXTENDED_DATA_ constants */
 typedef IV SSH2_STREAM_ID;    /* stream_id or LIBSSH2_CHANNEL_FLUSH macros */
+typedef IV SSH2_FXFO;         /* POSIX open file constants */
 typedef char * SSH2_CHARP;         /* string that can not be NULL */
 typedef char * SSH2_CHARP_OR_NULL; /* string that can be NULL */
 
@@ -357,7 +368,7 @@ sv2iv_constant_or_croak(const char *name, SV *sv) {
         if (type == PERL_constant_NOTFOUND) {
             sv = sv_2mortal(newSVpvf("LIBSSH2_%s_%s", name, pv));
             pv = SvPVbyte(sv, len);
-            type = constant(aTHX_ SvPV_nolen(sv), len, &value);
+            type = constant(aTHX_ pv, len, &value);
         }
         if (type == PERL_constant_ISIV)
             return value;
@@ -2098,36 +2109,38 @@ PPCODE:
     else
         XSRETURN(1);
 
-#define XLATFLAG(posix, fxf) do { \
-    if (flags & posix || \
-     l_flags == 0 && posix == 0 && flags == posix /* 0-valued flag */) { \
-        l_flags |= fxf; \
-        flags &= ~posix; \
-    } \
-} while(0)
+#define XLATFLAG(o_flags, flags, fxfo, fxf)                             \
+    do {                                                                \
+        if (fxfo                                                        \
+            ? ((o_flags & fxfo) == fxfo)                                \
+            : (!o_flags && !flags) ) {                                  \
+            flags |= fxf;                                               \
+            o_flags &= ~fxfo;                                           \
+        }                                                               \
+    } while(0)
     
 SSH2_FILE*
-net_sf_open(SSH2_SFTP* sf, SV* file, int flags = O_RDONLY, int mode = 0666)
+net_sf_open(SSH2_SFTP* sf, SV* file, SSH2_FXFO o_flags = O_RDONLY, int mode = 0666)
 PREINIT:
-    long l_flags = 0;
+    long flags = 0;
     const char* pv_file;
     STRLEN len_file;
 CODE:
     pv_file = SvPVbyte(file, len_file);
     
     /* map POSIX O_* to LIBSSH2_FXF_* (can't assume they're the same) */
-    XLATFLAG(O_RDWR,   LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE);
-    XLATFLAG(O_RDONLY, LIBSSH2_FXF_READ);
-    XLATFLAG(O_WRONLY, LIBSSH2_FXF_WRITE);
-    XLATFLAG(O_APPEND, LIBSSH2_FXF_APPEND);
-    XLATFLAG(O_CREAT,  LIBSSH2_FXF_CREAT);
-    XLATFLAG(O_TRUNC,  LIBSSH2_FXF_TRUNC);
-    XLATFLAG(O_EXCL,   LIBSSH2_FXF_EXCL);
+    XLATFLAG(o_flags, flags, O_RDWR,   LIBSSH2_FXF_READ | LIBSSH2_FXF_WRITE);
+    XLATFLAG(o_flags, flags, O_RDONLY, LIBSSH2_FXF_READ);
+    XLATFLAG(o_flags, flags, O_WRONLY, LIBSSH2_FXF_WRITE);
+    XLATFLAG(o_flags, flags, O_APPEND, LIBSSH2_FXF_APPEND);
+    XLATFLAG(o_flags, flags, O_CREAT,  LIBSSH2_FXF_CREAT);
+    XLATFLAG(o_flags, flags, O_TRUNC,  LIBSSH2_FXF_TRUNC);
+    XLATFLAG(o_flags, flags, O_EXCL,   LIBSSH2_FXF_EXCL);
     if (flags)
         croak("%s::open: unknown flag value: %d", class, flags);
 
     NEW_FILE(libssh2_sftp_open_ex(sf->sftp, (char*)pv_file, len_file,
-     l_flags, mode, LIBSSH2_SFTP_OPENFILE));
+                                  flags, mode, LIBSSH2_SFTP_OPENFILE));
 OUTPUT:
     RETVAL
 

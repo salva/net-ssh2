@@ -35,6 +35,7 @@ TYPEMAP
     SSH2_CHARP_OR_NULL T_SSH2_CHARP_OR_NULL
 
     SSH2_STREAM_ID     T_SSH2_STREAM_ID
+    SSH2_FXFO          T_SSH2_FXFO
 
 OUTPUT
 T_PV
@@ -169,3 +170,6 @@ T_SSH2_BYTESU64
 
 T_SSH2_STREAM_ID
     $var = sv2iv_constant_or_croak(\"CHANNEL_FLUSH\", $arg);
+
+T_SSH2_FXFO
+    $var = sv2iv_constant_or_croak(\"FXFO\", $arg);
