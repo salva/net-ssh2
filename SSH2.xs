@@ -972,7 +972,15 @@ void
 net_ss_DESTROY(SSH2* ss)
 CODE:
     debug("%s::DESTROY object 0x%x\n", class, ss);
-    libssh2_session_free(ss->session);
+    if (libssh2_session_free(ss->session) != LIBSSH2_ERROR_NONE) {
+#if (LIBSSH2_VERSION_NUM >= 0x010801)
+        /* Do a dirty close */
+        libssh2_session_set_socket_disconnected(ss->session);
+        libssh2_session_free(ss->session);
+#else
+        Perl_warn(aTHX_ "Net::SSH2: failed to free session object, memory leaked.");
+#endif
+    }
     if (ss->socket)
         SvREFCNT_dec(ss->socket);
     if (ss->hostname)
